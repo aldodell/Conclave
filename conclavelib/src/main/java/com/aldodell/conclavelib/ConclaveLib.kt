@@ -21,28 +21,27 @@ import java.util.Date
 
 
 /**
- * Objetivo: Administrar las acciones necesarias para determinar si
- * se cuenta con una aplicacion con licencia del desarrollador.
- *
- * Funciones:
- * 1 - Determinar si es la primera vez que se usa la app
- * 2 - Guardar la fecha del primer uso a efectos de la funcion 1
- * 3 - Estabablecer conexion con servidor para determinar si se ha pagado la app
- * 4 - En caso de estar en periodo de gracia dar acceso al uso
- * 5 - En caso de no estar paga y haberse vencido el periodo de gracia cerrarla.
- */
-
-
-/**
  * Conclave class. Handle access to an app
- * @param mainActivity  Context object implementation
- * @param AppID  A string wich identify universally the application to be validate
- * @param onFirstTime Method wich will be call at first time use app. And only once.
+ * @param appCompatActivity  Activity instance call validation app.
+ * @param AppID  A string which identify universally the application to be validate
+ * @param onFirstTime Method which will be call at first time use app. And only once.
+ *
+ * Example:
+ * val lib = Conclave(this, "ConclaveTest") {
+ *      it.timesBeforeCheckLicence = 0
+ *  }
+ *
+ *  lib.checkValidity {
+ *      //Do some stuff
+ *   }
+ *
+ *
+ *
  */
 class Conclave(
-    private val mainActivity: AppCompatActivity,
+    private val appCompatActivity: AppCompatActivity,
     private val AppID: String,
-    val onFirstTime: ((conclave: Conclave) -> (Unit))? = null
+    private val onFirstTime: ((conclave: Conclave) -> (Unit))? = null
 ) {
 
     //Late objects
@@ -76,7 +75,7 @@ class Conclave(
     /**
      * Validation status
      */
-    var status: AppStatusValidation
+    private var status: AppStatusValidation
         get() {
             return AppStatusValidation.valueOf(
                 preferences.getString(
@@ -108,14 +107,16 @@ class Conclave(
      *  Common  preferences
      */
     private val preferences: SharedPreferences =
-        mainActivity.getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE)!!
+        appCompatActivity.getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE)!!
 
     /**
      *
-     * Times wich could be open the app without check licence
+     * Times which could be open the app without check licence.
+     * Works like a trial mode. Once "times" are gone
+     * status will change to REJECTED.
      */
     var timesBeforeCheckLicence: Int
-        get() = preferences.getInt(TIMES_FOR_CHECK_LICENCES, 0)
+        get() = preferences.getInt(TIMES_FOR_CHECK_LICENCES, 1)
         set(value) {
             preferences
                 .edit()
@@ -145,21 +146,9 @@ class Conclave(
     /**
      * Is active, return true if de app was activate from server
      */
-    private var isActive: Boolean
+    private val isActive: Boolean
         get() {
-            val s = preferences
-                .getString(STATUS, AppStatusValidation.NO_YET.name)
-            return (s == AppStatusValidation.ACCEPTED.name) || (s == AppStatusValidation.PENDING.name)
-        }
-        set(value) {
-            var v = AppStatusValidation.ACCEPTED
-            if (!value) {
-                v = AppStatusValidation.REJECTED
-            }
-            preferences
-                .edit()
-                .putString(STATUS, v.name)
-                .apply()
+            return status == AppStatusValidation.PENDING || status == AppStatusValidation.ACCEPTED
         }
 
 
@@ -170,6 +159,9 @@ class Conclave(
         get() {
             if (timesBeforeCheckLicence > 0) {
                 timesBeforeCheckLicence -= 1
+            }
+            if ((timesBeforeCheckLicence < 1) && (status == AppStatusValidation.PENDING)) {
+                status = AppStatusValidation.REJECTED
             }
             return timesBeforeCheckLicence > 0
         }
@@ -202,7 +194,6 @@ class Conclave(
             return
         }
 
-
     }
 
 
@@ -211,6 +202,7 @@ class Conclave(
         //Get  database
         val db = FirebaseFirestore.getInstance(firebaseApp)
 
+        //Check if existe user finding its email
         db.document("apps/$AppID/users/$userEmail")
             .get()
             .addOnCompleteListener {
@@ -220,15 +212,13 @@ class Conclave(
                     db.document("apps/$AppID/users/$userEmail")
                         .set(data)
                 } else {
-                    //If existe read status
-
+                    //If exist read status
                     db.document("apps/$AppID/users/$userEmail")
                         .get()
                         .addOnCompleteListener {
                             if (it.isSuccessful) {
                                 status =
                                     AppStatusValidation.fromValue((it.result.get("status") as String))
-                                isActive = (status == AppStatusValidation.ACCEPTED)
                                 isValidCallback?.invoke(isActive)
                             }
                         }
@@ -256,7 +246,7 @@ class Conclave(
     /**
      * Begins signin process
      */
-    private val signInLauncher: ActivityResultLauncher<Intent> = mainActivity
+    private val signInLauncher: ActivityResultLauncher<Intent> = appCompatActivity
         .registerForActivityResult(FirebaseAuthUIActivityResultContract()) { result ->
             onSignInResult(result)
         }
@@ -275,7 +265,7 @@ class Conclave(
         firebaseApp = try {
             FirebaseApp.getInstance(CONCLAVE_NAME)
         } catch (ex: Exception) {
-            FirebaseApp.initializeApp(mainActivity, option, CONCLAVE_NAME)
+            FirebaseApp.initializeApp(appCompatActivity, option, CONCLAVE_NAME)
             // FirebaseApp.getInstance(CONCLAVE_NAME)
         }
 
@@ -306,10 +296,3 @@ class Conclave(
     }
 }
 
-/**
- * Se crea la instancia
- * Se invoca onFirstTime
- * Se revisa si est'a registrado el usuario localmente. Si esta activo localmente
- * Si no es as'i se intenta conectar a internet para hacer el proceso de validacion
- * Si es valido en el servidor se guarda localmente
- */
