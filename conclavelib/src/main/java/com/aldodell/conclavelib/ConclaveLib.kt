@@ -46,7 +46,7 @@ class Conclave(
 ) {
 
     //Late objects
-    lateinit var firebaseApp: FirebaseApp
+    private lateinit var firebaseApp: FirebaseApp
 
     // Keys
     private val PREFERENCES_NAME = "conclave"
@@ -131,7 +131,7 @@ class Conclave(
         get() {
             return if (preferences.getString(FIRST_DATE, "")!!.isEmpty()) {
                 val date = Date.from(Instant.now())
-                    .toString() //FIXME Because Instant.now it is neccesary level 26
+                    .toString() //FIXME Because Instant.now it is necessary level 26
                 preferences
                     .edit()
                     .putString(FIRST_DATE, date)
@@ -176,18 +176,34 @@ class Conclave(
 
 
     /**
+     * Callback call to detect where validation process are done.
+     */
+    private var isValidCallback: ((isValid: Boolean) -> (Unit))? = null
+
+    /**
      * Return true if the app could be used. Regardless if for trial time or because is valid.
      * If return value are true but the app aren't until valid, will invoke getPass and will substract
      * internal value of timesBeforeCheckLicence.
      */
-    val isValid: Boolean
-        get() {
-            val mIsValid = isActive || getPass
-            if (!mIsValid) {
-                signIn()
-            }
-            return mIsValid
+    fun checkValidity(callback: (isValid: Boolean) -> (Unit)): Unit {
+
+        isValidCallback = callback
+        signIn()
+
+        //If active
+        if (isActive) {
+            callback(true)
+            return
         }
+
+        //If doesnt active but it on trial
+        if (getPass) {
+            callback(true)
+            return
+        }
+
+
+    }
 
 
     private fun checkIfAppIsAlreadyValidate(userEmail: String) {
@@ -213,6 +229,7 @@ class Conclave(
                                 status =
                                     AppStatusValidation.fromValue((it.result.get("status") as String))
                                 isActive = (status == AppStatusValidation.ACCEPTED)
+                                isValidCallback?.invoke(isActive)
                             }
                         }
                 }
@@ -224,7 +241,9 @@ class Conclave(
         // val response = result.idpResponse
         if (result.resultCode == RESULT_OK) {
             try {
+                //Get email form current user
                 val userEmail = FirebaseAuth.getInstance(firebaseApp).currentUser!!.email!!
+                //Check y this app are authorized
                 checkIfAppIsAlreadyValidate(userEmail)
             } catch (e: Exception) {
                 Log.e("onSignInResult", e.message!!)
@@ -253,20 +272,22 @@ class Conclave(
             .setProjectId(PROJECT_ID)
             .build()
 
-        try {
-            firebaseApp = FirebaseApp.getInstance(CONCLAVE_NAME)
+        firebaseApp = try {
+            FirebaseApp.getInstance(CONCLAVE_NAME)
         } catch (ex: Exception) {
             FirebaseApp.initializeApp(mainActivity, option, CONCLAVE_NAME)
-            firebaseApp = FirebaseApp.getInstance(CONCLAVE_NAME)
+            // FirebaseApp.getInstance(CONCLAVE_NAME)
         }
 
-
+        //Get AuthUI
         val authUI = AuthUI.getInstance(firebaseApp)
 
+        //Configure intent
         val intento = authUI.createSignInIntentBuilder()
             .setAvailableProviders(listOf(IdpConfig.GoogleBuilder().build()))
             .build()
 
+        //call launcher
         signInLauncher.launch(intento)
     }
 
@@ -280,10 +301,6 @@ class Conclave(
             //Invoking user custom onFirstTime method
             onFirstTime?.invoke(this)
 
-        } else {
-            if (!isValid) {
-                throw InvalidLicenceApplication()
-            }
         }
 
     }

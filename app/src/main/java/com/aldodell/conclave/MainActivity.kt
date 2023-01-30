@@ -14,9 +14,9 @@ class MainActivity : AppCompatActivity() {
             it.timesBeforeCheckLicence = 0
         }
 
-        val isValid = lib.isValid
-val z=0
-
+       lib.checkValidity {
+           val t = it
+       }
 
     }
 }
