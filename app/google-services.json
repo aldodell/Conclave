@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "877171259644",
+    "project_id": "controlpagoaplicativo",
+    "storage_bucket": "controlpagoaplicativo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877171259644:android:9503714834ab45415ebf79",
+        "android_client_info": {
+          "package_name": "com.aldodell.conclave"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "877171259644-v802bkbov7uacc5qbuo6tk8lo64kjosc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCG-Bk3ktJQ0lMsuXAbRV7jdRJVYtO8lXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "877171259644-v802bkbov7uacc5qbuo6tk8lo64kjosc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:877171259644:android:365b6a2a5d519adc5ebf79",
+        "android_client_info": {
+          "package_name": "com.psiqueylogos_ac.exameninac"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "877171259644-5o2v0bpj022dm15r4ts3ccelno65huis.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.psiqueylogos_ac.exameninac",
+            "certificate_hash": "6434587acbc65b62284bf41d237a780cb5d9859a"
+          }
+        },
+        {
+          "client_id": "877171259644-v802bkbov7uacc5qbuo6tk8lo64kjosc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCG-Bk3ktJQ0lMsuXAbRV7jdRJVYtO8lXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "877171259644-v802bkbov7uacc5qbuo6tk8lo64kjosc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
